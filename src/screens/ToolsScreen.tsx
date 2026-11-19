@@ -10,6 +10,14 @@ import { colors } from '../theme/colors';
 
 type Tab = 'tasks' | 'notes' | 'reminders';
 
+interface Row {
+  id: string;
+  text: string;
+  done: boolean;
+  onPress?: () => void;
+  onDelete: () => void;
+}
+
 export function ToolsScreen() {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('tasks');
@@ -30,7 +38,7 @@ export function ToolsScreen() {
     setInput('');
   };
 
-  const rows =
+  const rows: Row[] =
     tab === 'tasks'
       ? p.tasks.map((x) => ({ id: x.id, text: x.title, done: x.done, onPress: () => p.toggleTask(x.id), onDelete: () => p.removeTask(x.id) }))
       : tab === 'notes'
