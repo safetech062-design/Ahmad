@@ -1,0 +1,44 @@
+name: Build Android APK
+
+# Run manually: GitHub > Actions > "Build Android APK" > Run workflow.
+# Free GitHub minutes build the APK in the cloud; no laptop and no Expo account needed.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Check that scripts/setup.sh was run and committed
+        run: |
+          test -f package-lock.json || { echo "package-lock.json missing - run 'bash scripts/setup.sh' once and commit the result"; exit 1; }
+          grep -q '"expo-contacts"' package.json || { echo "Phase 2/3 dependencies missing - run 'bash scripts/setup.sh' and commit"; exit 1; }
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mera-dost-ai-apk
+          path: android/app/build/outputs/apk/release/*.apk
